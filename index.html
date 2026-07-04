@@ -287,7 +287,7 @@
   <!-- SETUP SCREEN -->
   <div id="setupScreen">
     <div class="card">
-      <label>Players (2–6)</label>
+      <label>Players (2–10)</label>
       <div id="playerRows"></div>
       <button class="add-player-btn" id="addPlayerBtn">+ Add player</button>
     </div>
@@ -561,11 +561,11 @@
       });
     });
 
-    addPlayerBtn.style.display = setupNames.length >= 6 ? "none" : "block";
+    addPlayerBtn.style.display = setupNames.length >= 10 ? "none" : "block";
   }
 
   addPlayerBtn.addEventListener("click", () => {
-    if(setupNames.length < 6){
+    if(setupNames.length < 10){
       setupNames.push("");
       renderSetup();
     }
@@ -583,8 +583,8 @@
       setupError.textContent = "Enter at least 2 player names.";
       return;
     }
-    if(names.length > 6){
-      setupError.textContent = "Maximum 6 players.";
+    if(names.length > 10){
+      setupError.textContent = "Maximum 10 players.";
       return;
     }
     const limit = parseInt(scoreLimitInput.value, 10);
