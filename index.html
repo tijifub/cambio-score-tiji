@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cambio Score Tracker</title>
+<style>
+  :root{
+    --bg:#0f172a;
+    --card:#1e293b;
+    --card2:#273449;
+    --accent:#38bdf8;
+    --accent2:#f97316;
+    --good:#22c55e;
+    --bad:#ef4444;
+    --text:#e2e8f0;
+    --muted:#94a3b8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:linear-gradient(180deg,#0f172a,#111c33);
+    color:var(--text);
+    min-height:100vh;
+    padding:16px;
+  }
+  .wrap{max-width:720px;margin:0 auto;}
+  h1{
+    font-size:1.5rem;
+    text-align:center;
+    margin:8px 0 4px;
+    letter-spacing:0.5px;
+  }
+  .subtitle{
+    text-align:center;
+    color:var(--muted);
+    font-size:0.85rem;
+    margin-bottom:20px;
+  }
+  .card{
+    background:var(--card);
+    border-radius:14px;
+    padding:18px;
+    margin-bottom:16px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.25);
+  }
+  label{
+    display:block;
+    font-size:0.8rem;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  input[type="text"], input[type="number"]{
+    width:100%;
+    padding:10px 12px;
+    border-radius:8px;
+    border:1px solid #334155;
+    background:var(--card2);
+    color:var(--text);
+    font-size:1rem;
+  }
+  input:focus{outline:2px solid var(--accent);}
+  .player-row{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    margin-bottom:10px;
+  }
+  .player-row input{flex:1;}
+  .remove-btn{
+    background:none;
+    border:none;
+    color:var(--bad);
+    font-size:1.3rem;
+    cursor:pointer;
+    padding:4px 8px;
+  }
+  .btn{
+    display:inline-block;
+    background:var(--accent);
+    color:#03202e;
+    border:none;
+    padding:10px 18px;
+    border-radius:8px;
+    font-weight:600;
+    font-size:0.95rem;
+    cursor:pointer;
+    transition:transform .05s ease;
+  }
+  .btn:active{transform:scale(0.97);}
+  .btn.secondary{
+    background:var(--card2);
+    color:var(--text);
+    border:1px solid #334155;
+  }
+  .btn.danger{
+    background:var(--bad);
+    color:#fff;
+  }
+  .btn.ghost{
+    background:none;
+    border:1px solid #334155;
+    color:var(--muted);
+  }
+  .btn:disabled{opacity:0.4;cursor:not-allowed;}
+  .row{display:flex;gap:10px;flex-wrap:wrap;}
+  .row .btn{flex:1;text-align:center;}
+  .add-player-btn{
+    background:none;
+    border:1px dashed #475569;
+    color:var(--accent);
+    padding:8px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:0.85rem;
+    width:100%;
+  }
+  .settings-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-bottom:14px;
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:0.9rem;
+  }
+  th,td{
+    padding:8px 6px;
+    text-align:center;
+    border-bottom:1px solid #334155;
+  }
+  th{
+    color:var(--muted);
+    font-weight:600;
+    font-size:0.75rem;
+    text-transform:uppercase;
+    letter-spacing:0.4px;
+  }
+  .leaderboard-name{text-align:left;font-weight:600;}
+  .total-cell{font-weight:700;font-size:1.05rem;}
+  .lowest{color:var(--good);}
+  .highest{color:var(--bad);}
+  .round-input-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:10px;
+  }
+  .round-input-row .name{
+    flex:0 0 90px;
+    font-size:0.85rem;
+    font-weight:600;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .round-input-row input{flex:1;}
+  .cambio-select{
+    margin-top:6px;
+    margin-bottom:14px;
+  }
+  select{
+    width:100%;
+    padding:10px 12px;
+    border-radius:8px;
+    border:1px solid #334155;
+    background:var(--card2);
+    color:var(--text);
+    font-size:0.95rem;
+  }
+  .badge{
+    display:inline-block;
+    padding:2px 8px;
+    border-radius:20px;
+    font-size:0.7rem;
+    font-weight:700;
+    margin-left:6px;
+  }
+  .badge.penalty{background:rgba(239,68,68,0.2);color:#fca5a5;}
+  .badge.safe{background:rgba(34,197,94,0.2);color:#86efac;}
+  .badge.bonus{background:rgba(34,197,94,0.25);color:#4ade80;}
+  .history-round{
+    border-top:1px solid #334155;
+    padding-top:10px;
+    margin-top:10px;
+    font-size:0.85rem;
+  }
+  .history-round:first-child{border-top:none;margin-top:0;padding-top:0;}
+  .history-title{
+    color:var(--muted);
+    font-size:0.75rem;
+    margin-bottom:6px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .undo-link{
+    background:none;
+    border:none;
+    color:var(--bad);
+    font-size:0.75rem;
+    cursor:pointer;
+    text-decoration:underline;
+  }
+  .winner-banner{
+    text-align:center;
+    padding:20px;
+    background:linear-gradient(135deg,#164e63,#1e3a5f);
+    border-radius:14px;
+    margin-bottom:16px;
+  }
+  .winner-banner .crown{font-size:2rem;}
+  .winner-banner h2{margin:6px 0 2px;}
+  .hidden{display:none !important;}
+  .tab-bar{
+    display:flex;
+    gap:8px;
+    margin-bottom:16px;
+    background:var(--card2);
+    border-radius:10px;
+    padding:4px;
+  }
+  .tab-btn{
+    flex:1;
+    background:none;
+    border:none;
+    color:var(--muted);
+    padding:10px 8px;
+    border-radius:8px;
+    font-weight:600;
+    font-size:0.85rem;
+    cursor:pointer;
+  }
+  .tab-btn.active{
+    background:var(--accent);
+    color:#03202e;
+  }
+  .link-btn{
+    background:none;
+    border:none;
+    color:var(--accent);
+    font-size:0.82rem;
+    cursor:pointer;
+    text-decoration:underline;
+    display:block;
+    margin:4px auto 0;
+    text-align:center;
+    width:100%;
+  }
+  .win-rank{
+    color:var(--muted);
+    font-size:0.8rem;
+    width:24px;
+  }
+  .game-log-row{
+    font-size:0.78rem;
+    color:var(--muted);
+    padding:6px 0;
+    border-bottom:1px solid #334155;
+    display:flex;
+    justify-content:space-between;
+  }
+  .game-log-row:last-child{border-bottom:none;}
+  .error{
+    color:var(--bad);
+    font-size:0.8rem;
+    margin-top:6px;
+    min-height:1em;
+  }
+  footer{
+    text-align:center;
+    color:var(--muted);
+    font-size:0.7rem;
+    margin-top:20px;
+    padding-bottom:20px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🃏 Cambio Score Tracker</h1>
+  <div class="subtitle">Lowest total wins. Track rounds, penalties, and the leaderboard.</div>
+
+  <!-- SETUP SCREEN -->
+  <div id="setupScreen">
+    <div class="card">
+      <label>Players (2–6)</label>
+      <div id="playerRows"></div>
+      <button class="add-player-btn" id="addPlayerBtn">+ Add player</button>
+    </div>
+
+    <div class="card">
+      <div class="settings-grid">
+        <div>
+          <label>Score limit (end game at)</label>
+          <input type="number" id="scoreLimit" value="100" min="10" step="5">
+        </div>
+        <div>
+          <label>Cambio penalty (points)</label>
+          <input type="number" id="penaltyPoints" value="5" min="0" step="1">
+        </div>
+      </div>
+      <div style="font-size:0.78rem;color:var(--muted);">
+        If a player calls Cambio and has the lowest score that round, the penalty is subtracted (bonus). If they don't, the penalty is added to their round score instead.
+      </div>
+    </div>
+
+    <div class="error" id="setupError"></div>
+    <button class="btn" id="startGameBtn" style="width:100%;">Start Game</button>
+    <button class="link-btn" id="viewWinnersFromSetupBtn">🏆 View Winners Board</button>
+    <button class="link-btn" id="viewRulesFromSetupBtn">📖 View Card Rules</button>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="gameScreen" class="hidden">
+
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tabGameBtn" data-tab="game">This Game</button>
+      <button class="tab-btn" id="tabWinnersBtn" data-tab="winners">🏆 Winners</button>
+      <button class="tab-btn" id="tabRulesBtn" data-tab="rules">📖 Rules</button>
+    </div>
+
+    <div id="gameTabContent">
+
+      <div id="winnerBanner" class="winner-banner hidden">
+        <div class="crown">🏆</div>
+        <h2 id="winnerName"></h2>
+        <div id="winnerScore" style="color:var(--muted);font-size:0.85rem;"></div>
+        <div class="row" style="margin-top:12px;">
+          <button class="btn secondary" id="newGameBtn">New Game</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <table id="leaderboardTable">
+          <thead>
+            <tr><th style="text-align:left;">Player</th><th>Total</th></tr>
+          </thead>
+          <tbody id="leaderboardBody"></tbody>
+        </table>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:8px;">Game ends at <span id="limitDisplay"></span> points. Lowest total wins.</div>
+      </div>
+
+      <div class="card" id="roundEntryCard">
+        <label style="margin-bottom:10px;">Round <span id="roundNumber"></span> — enter each player's card total</label>
+        <div id="roundInputs"></div>
+
+        <div class="cambio-select">
+          <label>Who called Cambio? (optional)</label>
+          <select id="cambioCaller">
+            <option value="">No one</option>
+          </select>
+        </div>
+
+        <div class="error" id="roundError"></div>
+        <button class="btn" id="submitRoundBtn" style="width:100%;">Submit Round</button>
+      </div>
+
+      <div class="card" id="historyCard">
+        <label style="margin-bottom:10px;">Round History</label>
+        <div id="historyBody" style="font-size:0.85rem;color:var(--muted);">No rounds yet.</div>
+      </div>
+
+      <div class="row">
+        <button class="btn ghost" id="resetGameBtn">End &amp; Reset Game</button>
+      </div>
+    </div>
+
+    <div id="winnersTabContent" class="hidden">
+      <div class="card">
+        <label style="margin-bottom:10px;">All-Time Wins</label>
+        <table>
+          <thead>
+            <tr><th style="text-align:left;">#</th><th style="text-align:left;">Player</th><th>Wins</th></tr>
+          </thead>
+          <tbody id="winnersBody"></tbody>
+        </table>
+        <div id="noWinnersMsg" style="font-size:0.8rem;color:var(--muted);margin-top:6px;">No completed games yet.</div>
+      </div>
+      <div class="card">
+        <label style="margin-bottom:10px;">Recent Games</label>
+        <div id="gameLogBody" style="font-size:0.8rem;color:var(--muted);">No games finished yet.</div>
+      </div>
+      <div class="row">
+        <button class="btn ghost" id="clearWinnersBtn">Clear Winners History</button>
+        <button class="btn ghost hidden" id="backFromWinnersBtn">← Back to Setup</button>
+      </div>
+    </div>
+
+    <div id="rulesTabContent" class="hidden">
+      <div class="card">
+        <label style="margin-bottom:10px;">Card Values &amp; Abilities</label>
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:left;">Card</th>
+              <th style="text-align:left;">Ability when drawn on your turn</th>
+              <th>Points if held at Cambio</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="text-align:left;">2, 3, 4, 5, 6, 7</td><td style="text-align:left;">None</td><td>Face value (e.g. 2 = 2 pts, 3 = 3 pts)</td></tr>
+            <tr><td style="text-align:left;">8</td><td style="text-align:left;">Check one of your own cards</td><td>8</td></tr>
+            <tr><td style="text-align:left;">9</td><td style="text-align:left;">Check one of another player's cards</td><td>9</td></tr>
+            <tr><td style="text-align:left;">Jack</td><td style="text-align:left;">Swap any two cards (but don't look at them)</td><td>10</td></tr>
+            <tr><td style="text-align:left;">Queen</td><td style="text-align:left;">Check one card (yours or another player's), then swap any two cards (but don't look at them)</td><td>10</td></tr>
+            <tr><td style="text-align:left;">Red King</td><td style="text-align:left;">None</td><td class="lowest">&minus;1 🙂</td></tr>
+            <tr><td style="text-align:left;">Black King</td><td style="text-align:left;">None</td><td class="highest">15 🙁</td></tr>
+            <tr><td style="text-align:left;">Ace</td><td style="text-align:left;">None</td><td>1</td></tr>
+            <tr><td style="text-align:left;">Joker</td><td style="text-align:left;">None</td><td>0</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card" style="font-size:0.82rem;color:var(--muted);">
+        Points are counted for cards still in your hand when someone calls "Cambio" and you discard immediately. Lowest total wins the round. Special abilities only trigger when you draw that card from the deck on your own turn.
+      </div>
+      <div class="row">
+        <button class="btn ghost hidden" id="backFromRulesBtn">← Back to Setup</button>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>Scores save automatically in this browser.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const STORAGE_KEY = "cambio_score_state_v1";
+  const WINNERS_KEY = "cambio_winners_v1";
+
+  /* ---------- State ---------- */
+  let state = null;
+
+  function defaultState(){
+    return {
+      phase: "setup", // setup | playing | finished
+      players: [], // {id, name, total, history:[{score, calledCambio, penalized}]}
+      scoreLimit: 100,
+      penaltyPoints: 5,
+      roundNumber: 1,
+      winnerId: null
+    };
+  }
+
+  function save(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw) return JSON.parse(raw);
+    }catch(e){}
+    return null;
+  }
+
+  /* ---------- Winners board (persists across games) ---------- */
+
+  function loadWinners(){
+    try{
+      const raw = localStorage.getItem(WINNERS_KEY);
+      if(raw) return JSON.parse(raw);
+    }catch(e){}
+    return [];
+  }
+
+  function saveWinners(list){
+    try{ localStorage.setItem(WINNERS_KEY, JSON.stringify(list)); }catch(e){}
+  }
+
+  function recordWin(name, total, scoreLimit){
+    const list = loadWinners();
+    list.push({ name, total, scoreLimit, date: new Date().toISOString() });
+    saveWinners(list);
+  }
+
+  function aggregateWins(list){
+    const counts = {};
+    list.forEach(g => {
+      const key = g.name.trim().toLowerCase();
+      if(!counts[key]) counts[key] = { name: g.name, wins: 0 };
+      counts[key].wins += 1;
+    });
+    return Object.values(counts).sort((a,b) => b.wins - a.wins);
+  }
+
+  /* ---------- Core scoring logic (pure functions, testable) ---------- */
+
+  // Given round raw scores {playerId: number} and optional callerId,
+  // returns {playerId: {roundScore, penalized}}
+  function computeRoundResults(rawScores, callerId, penaltyPoints){
+    const ids = Object.keys(rawScores);
+    const minScore = Math.min(...ids.map(id => rawScores[id]));
+    const results = {};
+    ids.forEach(id => {
+      let roundScore = rawScores[id];
+      let penalized = false;
+      let bonused = false;
+      if(callerId && id === callerId){
+        if(rawScores[id] > minScore){
+          roundScore += penaltyPoints;
+          penalized = true;
+        } else {
+          roundScore -= penaltyPoints;
+          bonused = true;
+        }
+      }
+      results[id] = { roundScore, penalized, bonused };
+    });
+    return results;
+  }
+
+  function getWinner(players){
+    if(players.length === 0) return null;
+    return players.reduce((a,b) => a.total <= b.total ? a : b);
+  }
+
+  /* expose for console testing */
+  window.__cambioTest = { computeRoundResults, getWinner, aggregateWins };
+
+  /* ---------- Setup screen rendering ---------- */
+
+  const setupScreen = document.getElementById("setupScreen");
+  const gameScreen = document.getElementById("gameScreen");
+  const playerRows = document.getElementById("playerRows");
+  const addPlayerBtn = document.getElementById("addPlayerBtn");
+  const startGameBtn = document.getElementById("startGameBtn");
+  const setupError = document.getElementById("setupError");
+  const scoreLimitInput = document.getElementById("scoreLimit");
+  const penaltyPointsInput = document.getElementById("penaltyPoints");
+
+  let setupNames = ["", ""];
+
+  function renderSetup(){
+    playerRows.innerHTML = "";
+    setupNames.forEach((name, idx) => {
+      const row = document.createElement("div");
+      row.className = "player-row";
+      row.innerHTML = `
+        <input type="text" placeholder="Player ${idx+1} name" value="${escapeHtml(name)}" data-idx="${idx}">
+        ${setupNames.length > 2 ? '<button class="remove-btn" data-idx="'+idx+'" title="Remove">&times;</button>' : ''}
+      `;
+      playerRows.appendChild(row);
+    });
+
+    playerRows.querySelectorAll("input").forEach(inp => {
+      inp.addEventListener("input", e => {
+        setupNames[+e.target.dataset.idx] = e.target.value;
+      });
+    });
+    playerRows.querySelectorAll(".remove-btn").forEach(btn => {
+      btn.addEventListener("click", e => {
+        setupNames.splice(+e.target.dataset.idx, 1);
+        renderSetup();
+      });
+    });
+
+    addPlayerBtn.style.display = setupNames.length >= 6 ? "none" : "block";
+  }
+
+  addPlayerBtn.addEventListener("click", () => {
+    if(setupNames.length < 6){
+      setupNames.push("");
+      renderSetup();
+    }
+  });
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+  }
+
+  startGameBtn.addEventListener("click", () => {
+    const names = setupNames.map(n => n.trim()).filter(n => n.length > 0);
+    if(names.length < 2){
+      setupError.textContent = "Enter at least 2 player names.";
+      return;
+    }
+    if(names.length > 6){
+      setupError.textContent = "Maximum 6 players.";
+      return;
+    }
+    const limit = parseInt(scoreLimitInput.value, 10);
+    const penalty = parseInt(penaltyPointsInput.value, 10);
+    if(isNaN(limit) || limit <= 0){
+      setupError.textContent = "Score limit must be a positive number.";
+      return;
+    }
+    if(isNaN(penalty) || penalty < 0){
+      setupError.textContent = "Penalty must be zero or a positive number.";
+      return;
+    }
+    setupError.textContent = "";
+
+    state = defaultState();
+    state.phase = "playing";
+    state.scoreLimit = limit;
+    state.penaltyPoints = penalty;
+    state.players = names.map((name, i) => ({
+      id: "p" + i + "_" + Date.now(),
+      name,
+      total: 0,
+      history: []
+    }));
+    save();
+    renderGame();
+    showScreen("game");
+    switchTab("game");
+  });
+
+  function showScreen(which){
+    if(which === "setup"){
+      setupScreen.classList.remove("hidden");
+      gameScreen.classList.add("hidden");
+    } else {
+      setupScreen.classList.add("hidden");
+      gameScreen.classList.remove("hidden");
+    }
+  }
+
+  /* ---------- Tab switching (This Game / Winners Board) ---------- */
+
+  const tabGameBtn = document.getElementById("tabGameBtn");
+  const tabWinnersBtn = document.getElementById("tabWinnersBtn");
+  const tabRulesBtn = document.getElementById("tabRulesBtn");
+  const gameTabContent = document.getElementById("gameTabContent");
+  const winnersTabContent = document.getElementById("winnersTabContent");
+  const rulesTabContent = document.getElementById("rulesTabContent");
+  const winnersBody = document.getElementById("winnersBody");
+  const noWinnersMsg = document.getElementById("noWinnersMsg");
+  const gameLogBody = document.getElementById("gameLogBody");
+
+  const allTabBtns = [tabGameBtn, tabWinnersBtn, tabRulesBtn];
+  const allTabContents = [gameTabContent, winnersTabContent, rulesTabContent];
+
+  function switchTab(tab){
+    const map = { game: [tabGameBtn, gameTabContent], winners: [tabWinnersBtn, winnersTabContent], rules: [tabRulesBtn, rulesTabContent] };
+    allTabBtns.forEach(b => b.classList.remove("active"));
+    allTabContents.forEach(c => c.classList.add("hidden"));
+    const [btn, content] = map[tab] || map.game;
+    btn.classList.add("active");
+    content.classList.remove("hidden");
+    if(tab === "winners") renderWinnersBoard();
+
+    // If there's no active game, hide the "This Game" tab and show a way back to setup
+    const hasActiveGame = !!(state && state.players && state.players.length);
+    tabGameBtn.classList.toggle("hidden", !hasActiveGame);
+    document.getElementById("backFromWinnersBtn").classList.toggle("hidden", hasActiveGame);
+    document.getElementById("backFromRulesBtn").classList.toggle("hidden", hasActiveGame);
+  }
+
+  tabGameBtn.addEventListener("click", () => switchTab("game"));
+  tabWinnersBtn.addEventListener("click", () => switchTab("winners"));
+  tabRulesBtn.addEventListener("click", () => switchTab("rules"));
+
+  document.getElementById("viewWinnersFromSetupBtn").addEventListener("click", () => {
+    showScreen("game");
+    switchTab("winners");
+  });
+
+  document.getElementById("viewRulesFromSetupBtn").addEventListener("click", () => {
+    showScreen("game");
+    switchTab("rules");
+  });
+
+  document.getElementById("backFromWinnersBtn").addEventListener("click", () => showScreen("setup"));
+  document.getElementById("backFromRulesBtn").addEventListener("click", () => showScreen("setup"));
+
+  document.getElementById("clearWinnersBtn").addEventListener("click", () => {
+    if(confirm("Clear all-time winners history? This can't be undone.")){
+      saveWinners([]);
+      renderWinnersBoard();
+    }
+  });
+
+  function renderWinnersBoard(){
+    const list = loadWinners();
+    const ranked = aggregateWins(list);
+
+    if(ranked.length === 0){
+      winnersBody.innerHTML = "";
+      noWinnersMsg.classList.remove("hidden");
+    } else {
+      noWinnersMsg.classList.add("hidden");
+      winnersBody.innerHTML = ranked.map((r, i) => `
+        <tr>
+          <td class="win-rank">${i+1}</td>
+          <td class="leaderboard-name">${escapeHtml(r.name)}</td>
+          <td class="total-cell">${r.wins}</td>
+        </tr>
+      `).join("");
+    }
+
+    if(list.length === 0){
+      gameLogBody.innerHTML = "No games finished yet.";
+    } else {
+      const recent = [...list].reverse().slice(0, 15);
+      gameLogBody.innerHTML = recent.map(g => {
+        const d = new Date(g.date);
+        const dateStr = isNaN(d.getTime()) ? "" : d.toLocaleDateString() + " " + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+        return `<div class="game-log-row">
+          <span>${escapeHtml(g.name)} won (${g.total} pts, limit ${g.scoreLimit})</span>
+          <span>${dateStr}</span>
+        </div>`;
+      }).join("");
+    }
+  }
+
+  /* ---------- Game screen rendering ---------- */
+
+  const leaderboardBody = document.getElementById("leaderboardBody");
+  const limitDisplay = document.getElementById("limitDisplay");
+  const roundNumberEl = document.getElementById("roundNumber");
+  const roundInputs = document.getElementById("roundInputs");
+  const cambioCaller = document.getElementById("cambioCaller");
+  const submitRoundBtn = document.getElementById("submitRoundBtn");
+  const roundError = document.getElementById("roundError");
+  const historyBody = document.getElementById("historyBody");
+  const roundEntryCard = document.getElementById("roundEntryCard");
+  const winnerBanner = document.getElementById("winnerBanner");
+  const winnerName = document.getElementById("winnerName");
+  const winnerScore = document.getElementById("winnerScore");
+
+  function renderGame(){
+    limitDisplay.textContent = state.scoreLimit;
+    roundNumberEl.textContent = state.roundNumber;
+
+    // Leaderboard sorted ascending by total (lowest = best)
+    const sorted = [...state.players].sort((a,b) => a.total - b.total);
+    const minTotal = Math.min(...state.players.map(p => p.total));
+    const maxTotal = Math.max(...state.players.map(p => p.total));
+
+    leaderboardBody.innerHTML = sorted.map(p => `
+      <tr>
+        <td class="leaderboard-name">${escapeHtml(p.name)}</td>
+        <td class="total-cell ${p.total===minTotal && minTotal!==maxTotal ? 'lowest' : ''} ${p.total===maxTotal && minTotal!==maxTotal ? 'highest':''}">${p.total}</td>
+      </tr>
+    `).join("");
+
+    // Round input rows
+    roundInputs.innerHTML = state.players.map(p => `
+      <div class="round-input-row">
+        <div class="name">${escapeHtml(p.name)}</div>
+        <input type="number" min="0" step="1" data-pid="${p.id}" class="round-score-input" placeholder="points">
+      </div>
+    `).join("");
+
+    // Cambio caller dropdown
+    cambioCaller.innerHTML = '<option value="">No one</option>' +
+      state.players.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join("");
+
+    renderHistory();
+
+    if(state.phase === "finished"){
+      roundEntryCard.classList.add("hidden");
+      winnerBanner.classList.remove("hidden");
+      const w = state.players.find(p => p.id === state.winnerId);
+      winnerName.textContent = w.name + " wins!";
+      winnerScore.textContent = "Final score: " + w.total + " points";
+    } else {
+      roundEntryCard.classList.remove("hidden");
+      winnerBanner.classList.add("hidden");
+    }
+  }
+
+  function renderHistory(){
+    const maxRounds = Math.max(...state.players.map(p => p.history.length), 0);
+    if(maxRounds === 0){
+      historyBody.innerHTML = "No rounds yet.";
+      return;
+    }
+    let html = "";
+    for(let r = maxRounds - 1; r >= 0; r--){
+      const isLast = r === maxRounds - 1;
+      html += `<div class="history-round">
+        <div class="history-title">
+          <span>Round ${r+1}</span>
+          ${isLast && state.phase !== "finished" ? '<button class="undo-link" data-round="'+r+'">Undo</button>' : ''}
+        </div>
+        <table>
+          <tbody>
+          ${state.players.map(p => {
+            const h = p.history[r];
+            if(!h) return "";
+            return `<tr>
+              <td style="text-align:left;">${escapeHtml(p.name)}</td>
+              <td>${h.roundScore}${h.penalized ? '<span class="badge penalty">+'+state.penaltyPoints+' penalty</span>' : ''}${h.bonused ? '<span class="badge bonus">&minus;'+state.penaltyPoints+' Cambio ✓</span>' : ''}</td>
+            </tr>`;
+          }).join("")}
+          </tbody>
+        </table>
+      </div>`;
+    }
+    historyBody.innerHTML = html;
+
+    historyBody.querySelectorAll(".undo-link").forEach(btn => {
+      btn.addEventListener("click", () => undoLastRound());
+    });
+  }
+
+  submitRoundBtn.addEventListener("click", () => {
+    const inputs = roundInputs.querySelectorAll(".round-score-input");
+    const rawScores = {};
+    let hasError = false;
+    inputs.forEach(inp => {
+      const val = inp.value.trim();
+      if(val === ""){ hasError = true; return; }
+      const num = parseInt(val, 10);
+      if(isNaN(num) || num < 0){ hasError = true; return; }
+      rawScores[inp.dataset.pid] = num;
+    });
+
+    if(hasError || Object.keys(rawScores).length !== state.players.length){
+      roundError.textContent = "Enter a valid (0 or higher) score for every player.";
+      return;
+    }
+    roundError.textContent = "";
+
+    const callerId = cambioCaller.value || null;
+    const results = computeRoundResults(rawScores, callerId, state.penaltyPoints);
+
+    state.players.forEach(p => {
+      const r = results[p.id];
+      p.total += r.roundScore;
+      p.history.push({
+        roundScore: r.roundScore,
+        calledCambio: callerId === p.id,
+        penalized: r.penalized,
+        bonused: r.bonused
+      });
+    });
+
+    // Check end condition
+    const overLimit = state.players.some(p => p.total >= state.scoreLimit);
+    if(overLimit){
+      state.phase = "finished";
+      const winner = getWinner(state.players);
+      state.winnerId = winner.id;
+      recordWin(winner.name, winner.total, state.scoreLimit);
+    } else {
+      state.roundNumber += 1;
+    }
+
+    save();
+    renderGame();
+  });
+
+  function undoLastRound(){
+    const maxRounds = Math.max(...state.players.map(p => p.history.length), 0);
+    if(maxRounds === 0) return;
+    state.players.forEach(p => {
+      const removed = p.history.pop();
+      if(removed) p.total -= removed.roundScore;
+    });
+    state.phase = "playing";
+    state.winnerId = null;
+    state.roundNumber = maxRounds; // back to that round number
+    save();
+    renderGame();
+  }
+
+  document.getElementById("newGameBtn").addEventListener("click", resetGame);
+  document.getElementById("resetGameBtn").addEventListener("click", () => {
+    if(confirm("End this game and start over?")) resetGame();
+  });
+
+  function resetGame(){
+    state = defaultState();
+    setupNames = ["", ""];
+    localStorage.removeItem(STORAGE_KEY);
+    renderSetup();
+    showScreen("setup");
+  }
+
+  /* ---------- Init ---------- */
+  function init(){
+    const loaded = load();
+    if(loaded && loaded.phase && loaded.phase !== "setup" && loaded.players && loaded.players.length){
+      state = loaded;
+      renderGame();
+      showScreen("game");
+      switchTab("game");
+    } else {
+      renderSetup();
+      showScreen("setup");
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
