@@ -1,0 +1,13 @@
+{
+  "name": "cambio-multiplayer-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node test-cambio-engine.mjs && node test-cambio-room-logic.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
