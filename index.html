@@ -158,6 +158,19 @@
     white-space:nowrap;
   }
   .round-input-row input{flex:1;}
+  .sign-toggle{
+    flex:0 0 auto;
+    width:42px;
+    padding:10px 0;
+    font-size:1.1rem;
+    line-height:1;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,0.2);
+    background:rgba(255,255,255,0.08);
+    color:inherit;
+    cursor:pointer;
+  }
+  .sign-toggle:active{background:rgba(255,255,255,0.18);}
   .cambio-select{
     margin-top:6px;
     margin-bottom:14px;
@@ -748,7 +761,8 @@
     roundInputs.innerHTML = state.players.map(p => `
       <div class="round-input-row">
         <div class="name">${escapeHtml(p.name)}</div>
-        <input type="number" min="0" step="1" data-pid="${p.id}" class="round-score-input" placeholder="points">
+        <input type="number" step="1" data-pid="${p.id}" class="round-score-input" placeholder="points">
+        <button type="button" class="sign-toggle" aria-label="Toggle negative score" title="Toggle negative">&plusmn;</button>
       </div>
     `).join("");
 
@@ -805,6 +819,15 @@
     });
   }
 
+  roundInputs.addEventListener("click", (e) => {
+    const btn = e.target.closest(".sign-toggle");
+    if(!btn) return;
+    const inp = btn.parentElement.querySelector(".round-score-input");
+    const v = parseInt(inp.value, 10);
+    if(!isNaN(v)) inp.value = String(-v);
+    inp.focus();
+  });
+
   submitRoundBtn.addEventListener("click", () => {
     const inputs = roundInputs.querySelectorAll(".round-score-input");
     const rawScores = {};
@@ -813,12 +836,12 @@
       const val = inp.value.trim();
       if(val === ""){ hasError = true; return; }
       const num = parseInt(val, 10);
-      if(isNaN(num) || num < 0){ hasError = true; return; }
+      if(isNaN(num)){ hasError = true; return; }
       rawScores[inp.dataset.pid] = num;
     });
 
     if(hasError || Object.keys(rawScores).length !== state.players.length){
-      roundError.textContent = "Enter a valid (0 or higher) score for every player.";
+      roundError.textContent = "Enter a valid score for every player (negative scores like -1 are allowed).";
       return;
     }
     roundError.textContent = "";
