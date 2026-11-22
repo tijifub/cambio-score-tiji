@@ -329,6 +329,7 @@
     <button class="btn" id="startGameBtn" style="width:100%;">Start Game</button>
     <button class="link-btn" id="viewWinnersFromSetupBtn">🏆 View Winners Board</button>
     <button class="link-btn" id="viewRulesFromSetupBtn">📖 View Card Rules</button>
+    <button class="link-btn" id="viewMultiplayerFromSetupBtn">🎮 Play Cambio Multiplayer</button>
   </div>
 
   <!-- GAME SCREEN -->
@@ -338,6 +339,7 @@
       <button class="tab-btn active" id="tabGameBtn" data-tab="game">This Game</button>
       <button class="tab-btn" id="tabWinnersBtn" data-tab="winners">🏆 Winners</button>
       <button class="tab-btn" id="tabRulesBtn" data-tab="rules">📖 Rules</button>
+      <button class="tab-btn" id="tabMultiplayerBtn" data-tab="multiplayer">🎮 Play</button>
     </div>
 
     <div id="gameTabContent">
@@ -404,6 +406,14 @@
       <div class="row">
         <button class="btn ghost" id="clearWinnersBtn">Clear Winners History</button>
         <button class="btn ghost hidden" id="backFromWinnersBtn">← Back to Setup</button>
+      </div>
+    </div>
+
+    <div id="multiplayerTabContent" class="hidden">
+      <iframe id="multiplayerFrame" title="Cambio multiplayer" style="width:100%;height:78vh;min-height:520px;border:0;border-radius:12px;background:var(--card);"></iframe>
+      <div class="row">
+        <a class="btn ghost" href="multiplayer.html" target="_blank" rel="noopener" style="text-align:center;text-decoration:none;">Open in new window ↗</a>
+        <button class="btn ghost hidden" id="backFromMultiplayerBtn">← Back to Setup</button>
       </div>
     </div>
 
@@ -662,28 +672,41 @@
   const noWinnersMsg = document.getElementById("noWinnersMsg");
   const gameLogBody = document.getElementById("gameLogBody");
 
-  const allTabBtns = [tabGameBtn, tabWinnersBtn, tabRulesBtn];
-  const allTabContents = [gameTabContent, winnersTabContent, rulesTabContent];
+  const tabMultiplayerBtn = document.getElementById("tabMultiplayerBtn");
+  const multiplayerTabContent = document.getElementById("multiplayerTabContent");
+  const multiplayerFrame = document.getElementById("multiplayerFrame");
+  const allTabBtns = [tabGameBtn, tabWinnersBtn, tabRulesBtn, tabMultiplayerBtn];
+  const allTabContents = [gameTabContent, winnersTabContent, rulesTabContent, multiplayerTabContent];
 
   function switchTab(tab){
-    const map = { game: [tabGameBtn, gameTabContent], winners: [tabWinnersBtn, winnersTabContent], rules: [tabRulesBtn, rulesTabContent] };
+    const map = { game: [tabGameBtn, gameTabContent], winners: [tabWinnersBtn, winnersTabContent], rules: [tabRulesBtn, rulesTabContent], multiplayer: [tabMultiplayerBtn, multiplayerTabContent] };
     allTabBtns.forEach(b => b.classList.remove("active"));
     allTabContents.forEach(c => c.classList.add("hidden"));
     const [btn, content] = map[tab] || map.game;
     btn.classList.add("active");
     content.classList.remove("hidden");
     if(tab === "winners") renderWinnersBoard();
+    // Load the multiplayer page only once, the first time its tab is opened
+    if(tab === "multiplayer" && !multiplayerFrame.getAttribute("src")) multiplayerFrame.setAttribute("src", "multiplayer.html");
 
     // If there's no active game, hide the "This Game" tab and show a way back to setup
     const hasActiveGame = !!(state && state.players && state.players.length);
     tabGameBtn.classList.toggle("hidden", !hasActiveGame);
     document.getElementById("backFromWinnersBtn").classList.toggle("hidden", hasActiveGame);
     document.getElementById("backFromRulesBtn").classList.toggle("hidden", hasActiveGame);
+    document.getElementById("backFromMultiplayerBtn").classList.toggle("hidden", hasActiveGame);
   }
 
   tabGameBtn.addEventListener("click", () => switchTab("game"));
   tabWinnersBtn.addEventListener("click", () => switchTab("winners"));
   tabRulesBtn.addEventListener("click", () => switchTab("rules"));
+  tabMultiplayerBtn.addEventListener("click", () => switchTab("multiplayer"));
+
+  document.getElementById("viewMultiplayerFromSetupBtn").addEventListener("click", () => {
+    showScreen("game");
+    switchTab("multiplayer");
+  });
+  document.getElementById("backFromMultiplayerBtn").addEventListener("click", () => showScreen("setup"));
 
   document.getElementById("viewWinnersFromSetupBtn").addEventListener("click", () => {
     showScreen("game");
