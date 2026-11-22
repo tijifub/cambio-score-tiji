@@ -315,9 +315,13 @@
           <label>Cambio penalty (points)</label>
           <input type="number" id="penaltyPoints" value="5" min="0" step="1">
         </div>
+        <div>
+          <label>Cambio bonus (points)</label>
+          <input type="number" id="bonusPoints" value="5" min="0" step="1">
+        </div>
       </div>
       <div style="font-size:0.78rem;color:var(--muted);">
-        If a player calls Cambio and has the lowest score that round, the penalty is subtracted (bonus). If they don't, the penalty is added to their round score instead.
+        If a player calls Cambio and has the lowest score that round, the bonus is subtracted from their round score. If they don't, the penalty is added to it instead.
       </div>
     </div>
 
@@ -456,6 +460,7 @@
       players: [], // {id, name, total, history:[{score, calledCambio, penalized}]}
       scoreLimit: 100,
       penaltyPoints: 5,
+      bonusPoints: 5,
       roundNumber: 1,
       winnerId: null
     };
@@ -507,7 +512,7 @@
 
   // Given round raw scores {playerId: number} and optional callerId,
   // returns {playerId: {roundScore, penalized}}
-  function computeRoundResults(rawScores, callerId, penaltyPoints){
+  function computeRoundResults(rawScores, callerId, penaltyPoints, bonusPoints){
     const ids = Object.keys(rawScores);
     const minScore = Math.min(...ids.map(id => rawScores[id]));
     const results = {};
@@ -520,7 +525,7 @@
           roundScore += penaltyPoints;
           penalized = true;
         } else {
-          roundScore -= penaltyPoints;
+          roundScore -= bonusPoints;
           bonused = true;
         }
       }
@@ -547,6 +552,7 @@
   const setupError = document.getElementById("setupError");
   const scoreLimitInput = document.getElementById("scoreLimit");
   const penaltyPointsInput = document.getElementById("penaltyPoints");
+  const bonusPointsInput = document.getElementById("bonusPoints");
 
   let setupNames = ["", ""];
 
@@ -602,6 +608,7 @@
     }
     const limit = parseInt(scoreLimitInput.value, 10);
     const penalty = parseInt(penaltyPointsInput.value, 10);
+    const bonus = parseInt(bonusPointsInput.value, 10);
     if(isNaN(limit) || limit <= 0){
       setupError.textContent = "Score limit must be a positive number.";
       return;
@@ -610,12 +617,17 @@
       setupError.textContent = "Penalty must be zero or a positive number.";
       return;
     }
+    if(isNaN(bonus) || bonus < 0){
+      setupError.textContent = "Bonus must be zero or a positive number.";
+      return;
+    }
     setupError.textContent = "";
 
     state = defaultState();
     state.phase = "playing";
     state.scoreLimit = limit;
     state.penaltyPoints = penalty;
+    state.bonusPoints = bonus;
     state.players = names.map((name, i) => ({
       id: "p" + i + "_" + Date.now(),
       name,
@@ -805,7 +817,7 @@
             if(!h) return "";
             return `<tr>
               <td style="text-align:left;">${escapeHtml(p.name)}</td>
-              <td>${h.roundScore}${h.penalized ? '<span class="badge penalty">+'+state.penaltyPoints+' penalty</span>' : ''}${h.bonused ? '<span class="badge bonus">&minus;'+state.penaltyPoints+' Cambio ✓</span>' : ''}</td>
+              <td>${h.roundScore}${h.penalized ? '<span class="badge penalty">+'+state.penaltyPoints+' penalty</span>' : ''}${h.bonused ? '<span class="badge bonus">&minus;'+(state.bonusPoints ?? state.penaltyPoints)+' Cambio ✓</span>' : ''}</td>
             </tr>`;
           }).join("")}
           </tbody>
@@ -847,7 +859,7 @@
     roundError.textContent = "";
 
     const callerId = cambioCaller.value || null;
-    const results = computeRoundResults(rawScores, callerId, state.penaltyPoints);
+    const results = computeRoundResults(rawScores, callerId, state.penaltyPoints, state.bonusPoints ?? state.penaltyPoints);
 
     state.players.forEach(p => {
       const r = results[p.id];
