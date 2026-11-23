@@ -77,7 +77,7 @@
     text-overflow:ellipsis;white-space:nowrap;
   }
   .player-row .ptotal{flex:0 0 auto;font-size:0.75rem;color:var(--muted);margin-right:6px;}
-  .hand{display:flex;gap:6px;flex-wrap:wrap;}
+  .hand{display:grid;grid-template-columns:repeat(2,46px);gap:6px;}
   .slot{
     width:46px;height:64px;border-radius:6px;display:flex;align-items:center;justify-content:center;
     font-size:0.85rem;font-weight:700;cursor:default;border:2px solid transparent;
@@ -199,6 +199,10 @@
     </div>
 
     <div class="card" id="tableCard">
+      <div id="memorizeBanner" class="muted hidden" style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <span id="memorizeText" style="flex:1;font-size:0.85rem;"></span>
+        <button class="btn ghost" id="hideCardsBtn" style="padding:6px 12px;">Hide my cards now</button>
+      </div>
       <div class="table-area" id="tableArea"></div>
 
       <div class="piles">
@@ -310,6 +314,7 @@
 
   /* ---------- Persisted fields ---------- */
   const DEFAULT_SERVER = "wss://cambio-multiplayer.ti-ji-fub.workers.dev";
+  document.getElementById("hideCardsBtn").addEventListener("click", hideAllReveals);
   serverUrlInput.value = localStorage.getItem(LS_SERVER_KEY) || DEFAULT_SERVER;
   playerNameInput.value = localStorage.getItem(LS_NAME_KEY) || "";
 
@@ -404,6 +409,23 @@
     gameScreen.classList.toggle("hidden", which !== "game");
   }
 
+  // ---- Card cover: cards are face-down unless briefly revealed (opening peek or a peek ability) ----
+  const INITIAL_PEEK_MS = 8000;
+  const ABILITY_PEEK_MS = 5000;
+  const revealUntil = {};          // "playerId:slot" -> timestamp
+  let initialPeekRound = null;     // round number whose opening peek was already shown
+
+  function revealKey(pid, idx){ return pid + ":" + idx; }
+  function isRevealed(pid, idx){ return (revealUntil[revealKey(pid, idx)] || 0) > Date.now(); }
+  function revealSlotTemporarily(pid, idx, ms){
+    revealUntil[revealKey(pid, idx)] = Date.now() + ms;
+    setTimeout(() => { if(latest) render(); }, ms + 60);
+  }
+  function hideAllReveals(){
+    Object.keys(revealUntil).forEach(k => delete revealUntil[k]);
+    render();
+  }
+
   function render(){
     if(!latest) return;
     roomCode = latest.code || roomCode;
@@ -465,6 +487,17 @@
     } else {
       winnerBanner.classList.add("hidden");
     }
+
+    // Opening peek: right after the deal (before any card is played) show my two known cards for a few seconds
+    const dealJustHappened = round.phase === "awaitingDraw" && (round.discardPileCount ?? 0) === 0;
+    if(dealJustHappened && initialPeekRound !== latest.roundNumber){
+      initialPeekRound = latest.roundNumber;
+      ((round.hands && round.hands[myId]) || []).forEach((c, i) => { if(!c.hidden) revealSlotTemporarily(myId, i, INITIAL_PEEK_MS); });
+    }
+    const myReveals = ((round.hands && round.hands[myId]) || []).some((c, i) => !c.hidden && isRevealed(myId, i));
+    const banner = document.getElementById("memorizeBanner");
+    banner.classList.toggle("hidden", !myReveals);
+    if(myReveals) document.getElementById("memorizeText").textContent = "Memorize your cards — they will be covered shortly.";
 
     if(!finished){
       renderTable(round, players);
@@ -540,14 +573,15 @@
       handEl.className = "hand";
       hand.forEach((card, idx) => {
         const slot = document.createElement("div");
-        const known = !card.hidden;
+        const roundOver = round.phase === "roundEnd" || round.phase === "finished";
+        const known = !card.hidden && (roundOver || isRevealed(pid, idx));
         slot.className = "slot" + (known ? " faceup" + (isRed(card) ? " red" : " black") : "");
         slot.textContent = known ? cardLabel(card) : "🂠";
 
         let clickable = false;
         if(clickMode === "swapDrawn" && isMe){
           clickable = true;
-        } else if(clickMode === "peekOwn" && isMe && card.hidden){
+        } else if(clickMode === "peekOwn" && isMe){
           clickable = true;
         } else if(clickMode === "peekOther" && !isMe){
           clickable = true;
@@ -578,18 +612,22 @@
   function handleSlotClick(mode, playerId, slotIndex){
     gameError.textContent = "";
     if(mode === "swapDrawn"){
+      delete revealUntil[revealKey(myId, slotIndex)];
       send({ type: "swap", slotIndex });
       return;
     }
     if(mode === "peekOwn"){
+      revealSlotTemporarily(myId, slotIndex, ABILITY_PEEK_MS);
       send({ type: "peekOwn", slotIndex });
       return;
     }
     if(mode === "peekOther"){
+      revealSlotTemporarily(playerId, slotIndex, ABILITY_PEEK_MS);
       send({ type: "peekOther", targetPlayerId: playerId, slotIndex });
       return;
     }
     if(mode === "queenPeekAny"){
+      revealSlotTemporarily(playerId, slotIndex, ABILITY_PEEK_MS);
       send({ type: "queenPeek", targetPlayerId: playerId, slotIndex });
       selection = [];
       return;
@@ -603,6 +641,8 @@
       }
       if(selection.length === 2){
         const [a, b] = selection;
+        delete revealUntil[revealKey(a.playerId, a.slotIndex)];
+        delete revealUntil[revealKey(b.playerId, b.slotIndex)];
         const pending = (latest.round || {}).pendingAbility;
         const msgType = pending && pending.type === "peekAndSwap" ? "queenSwap" : "blindSwap";
         send({ type: msgType, a, b });
