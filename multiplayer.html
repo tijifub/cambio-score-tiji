@@ -126,7 +126,7 @@
   <div id="connectScreen">
     <div class="card">
       <label>Server address</label>
-      <input type="text" id="serverUrl" placeholder="wss://cambio-multiplayer.yoursubdomain.workers.dev">
+      <input type="text" id="serverUrl" placeholder="wss://cambio-multiplayer.ti-ji-fub.workers.dev">
       <div class="muted" style="font-size:0.72rem;margin-top:6px;">This is the multiplayer backend URL — see the deployment instructions from whoever set this up.</div>
     </div>
     <div class="card">
@@ -309,7 +309,8 @@
   }
 
   /* ---------- Persisted fields ---------- */
-  serverUrlInput.value = localStorage.getItem(LS_SERVER_KEY) || "";
+  const DEFAULT_SERVER = "wss://cambio-multiplayer.ti-ji-fub.workers.dev";
+  serverUrlInput.value = localStorage.getItem(LS_SERVER_KEY) || DEFAULT_SERVER;
   playerNameInput.value = localStorage.getItem(LS_NAME_KEY) || "";
 
   /* ---------- Connection ---------- */
