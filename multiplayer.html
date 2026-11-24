@@ -81,9 +81,29 @@
   .slot{
     width:46px;height:64px;border-radius:6px;display:flex;align-items:center;justify-content:center;
     font-size:0.85rem;font-weight:700;cursor:default;border:2px solid transparent;
-    background:repeating-linear-gradient(45deg,#334155,#334155 4px,#3b4a63 4px,#3b4a63 8px);
-    color:var(--text);
+    position:relative;box-shadow:0 2px 5px rgba(0,0,0,0.35);
+    background:#f8fafc;color:#0f172a;
   }
+  /* Card back: teal-navy gradient, diamond lattice, inner frame and a "C" emblem */
+  .slot:not(.faceup){
+    font-size:0;color:transparent;
+    background:
+      repeating-linear-gradient(45deg,rgba(255,255,255,0.12) 0 1px,transparent 1px 7px),
+      repeating-linear-gradient(-45deg,rgba(255,255,255,0.12) 0 1px,transparent 1px 7px),
+      linear-gradient(145deg,#0e7490,#1e3a5f 70%);
+  }
+  .slot:not(.faceup)::before{
+    content:"";position:absolute;inset:3px;border-radius:4px;
+    border:1.5px solid rgba(255,255,255,0.55);pointer-events:none;
+  }
+  .slot:not(.faceup)::after{
+    content:"C";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:18px;height:18px;border-radius:50%;box-sizing:border-box;
+    display:flex;align-items:center;justify-content:center;
+    background:#0f172a;border:1.5px solid rgba(255,255,255,0.75);
+    font-size:0.68rem;font-weight:800;color:#67e8f9;line-height:1;
+  }
+  .pile .slot:not(.faceup)::after{width:24px;height:24px;font-size:0.9rem;}
   .slot.faceup{background:#f8fafc;color:#0f172a;}
   .slot.red{color:#dc2626;}
   .slot.black{color:#0f172a;}
