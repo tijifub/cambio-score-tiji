@@ -391,6 +391,34 @@ check("cannot call Cambio twice in the same round", () => {
   assert.throws(() => callCambio(game, next));
 });
 
+check("bonus and penalty are separate settings, and totals can go negative", () => {
+  const rig = (vals) => vals.map((v, i) => ({ id: "x" + v + i, suit: "H", rank: "2", value: v, ability: null }));
+  const play = (callerLowest) => {
+    const game = makeGame(2, { scoreLimit: 1000, penaltyPoints: 10, bonusPoints: 2 });
+    const [p0, p1] = game.round.order;
+    game.round.hands[p0] = rig(callerLowest ? [-1, 0, 0, 0] : [9, 9, 9, 9]);
+    game.round.hands[p1] = rig([3, 3, 3, 3]);
+    game.round.turnIndex = game.round.order.indexOf(p0);
+    callCambio(game, p0);
+    let guard = 0;
+    while (game.round.phase !== "roundEnd" && guard < 20) {
+      const cur = game.round.order[game.round.turnIndex];
+      game.round.drawPile.push({ id: "filler" + guard, suit: "H", rank: "2", value: 2, ability: null });
+      drawFromDeck(game, cur);
+      discardDrawnDirectly(game, cur);
+      guard++;
+    }
+    return { results: finishRound(game), game, p0 };
+  };
+  const good = play(true);
+  assert.equal(good.results[good.p0].roundScore, -3); // -1 raw minus the 2-point bonus
+  assert.equal(good.results[good.p0].bonused, true);
+  assert.equal(good.game.playersMeta.find((p) => p.id === good.p0).total, -3);
+  const bad = play(false);
+  assert.equal(bad.results[bad.p0].roundScore, 46); // 36 raw plus the 10-point penalty
+  assert.equal(bad.results[bad.p0].penalized, true);
+});
+
 console.log(`\n${passed} checks passed.`);
 if (process.exitCode) {
   console.log("SOME CHECKS FAILED");

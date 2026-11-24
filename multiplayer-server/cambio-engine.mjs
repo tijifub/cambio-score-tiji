@@ -103,6 +103,7 @@ export function initGame(players, opts = {}) {
     playersMeta: players.map((p) => ({ id: p.id, name: p.name, total: p.total || 0 })),
     scoreLimit: opts.scoreLimit || 100,
     penaltyPoints: opts.penaltyPoints ?? 5,
+    bonusPoints: opts.bonusPoints ?? opts.penaltyPoints ?? 5,
     roundNumber: 0,
     startPlayerCursor: 0,
     phase: "lobby", // lobby | playing | gameEnd
@@ -359,7 +360,7 @@ export function finishRound(game) {
         roundScore += game.penaltyPoints;
         penalized = true;
       } else {
-        roundScore -= game.penaltyPoints;
+        roundScore -= game.bonusPoints ?? game.penaltyPoints;
         bonused = true;
       }
     }
@@ -393,6 +394,7 @@ export function redactForObserver(game, observerId) {
     roundNumber: game.roundNumber,
     scoreLimit: game.scoreLimit,
     penaltyPoints: game.penaltyPoints,
+    bonusPoints: game.bonusPoints ?? game.penaltyPoints,
     winnerId: game.winnerId,
     players: game.playersMeta.map((p) => ({ id: p.id, name: p.name, total: p.total })),
   };

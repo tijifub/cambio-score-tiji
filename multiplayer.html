@@ -161,6 +161,10 @@
           <label>Cambio penalty</label>
           <input type="number" id="lobbyPenalty" value="5" min="0" step="1">
         </div>
+        <div>
+          <label>Cambio bonus</label>
+          <input type="number" id="lobbyBonus" value="5" min="0" step="1">
+        </div>
       </div>
       <button class="btn" id="startGameBtn" style="width:100%;margin-top:10px;">Start Game</button>
     </div>
@@ -280,6 +284,7 @@
   const waitingForHostCard = document.getElementById("waitingForHostCard");
   const lobbyScoreLimit = document.getElementById("lobbyScoreLimit");
   const lobbyPenalty = document.getElementById("lobbyPenalty");
+  const lobbyBonus = document.getElementById("lobbyBonus");
   const startGameBtn = document.getElementById("startGameBtn");
 
   const leaderboardBody = document.getElementById("leaderboardBody");
@@ -388,10 +393,12 @@
   });
 
   startGameBtn.addEventListener("click", () => {
+    const num = (el, fallback) => { const v = parseInt(el.value, 10); return isNaN(v) || v < 0 ? fallback : v; };
     send({
       type: "startGame",
       scoreLimit: parseInt(lobbyScoreLimit.value, 10) || 100,
-      penaltyPoints: parseInt(lobbyPenalty.value, 10) || 5,
+      penaltyPoints: num(lobbyPenalty, 5),
+      bonusPoints: num(lobbyBonus, 5),
     });
   });
 
@@ -523,7 +530,7 @@
       const handStr = (r.hand || []).map(c => cardLabel(c)).join(" ");
       let badge = "";
       if(r.penalized) badge = `<span class="badge penalty">+${latest.penaltyPoints} penalty</span>`;
-      if(r.bonused) badge = `<span class="badge bonus">&minus;${latest.penaltyPoints} Cambio ✓</span>`;
+      if(r.bonused) badge = `<span class="badge bonus">&minus;${latest.bonusPoints ?? latest.penaltyPoints} Cambio ✓</span>`;
       return `<tr>
         <td style="text-align:left;">${escapeHtml(p.name)}</td>
         <td style="font-size:0.75rem;">${handStr} (${r.rawTotal})</td>
