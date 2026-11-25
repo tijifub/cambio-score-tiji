@@ -92,7 +92,9 @@ function grantKnowledge(state, observerId, targetPlayerId, slotIndex) {
   state.knowledge[observerId][targetPlayerId][slotIndex] = true;
 }
 
-const HAND_SIZE = 4;
+const DEFAULT_HAND_SIZE = 4;
+export const MIN_HAND_SIZE = 4;
+export const MAX_HAND_SIZE = 8;
 
 // players: [{id, name, total}] — total carried over across rounds (0 for a fresh game)
 export function initGame(players, opts = {}) {
@@ -104,6 +106,13 @@ export function initGame(players, opts = {}) {
     scoreLimit: opts.scoreLimit || 100,
     penaltyPoints: opts.penaltyPoints ?? 5,
     bonusPoints: opts.bonusPoints ?? opts.penaltyPoints ?? 5,
+    handSize: (() => {
+      const n = opts.handSize ?? DEFAULT_HAND_SIZE;
+      if (!Number.isInteger(n) || n < MIN_HAND_SIZE || n > MAX_HAND_SIZE) {
+        throw new Error(`Cards per player must be ${MIN_HAND_SIZE}-${MAX_HAND_SIZE}`);
+      }
+      return n;
+    })(),
     roundNumber: 0,
     startPlayerCursor: 0,
     phase: "lobby", // lobby | playing | gameEnd
@@ -117,19 +126,23 @@ export function startRound(game, rng = Math.random) {
   const numPlayers = ids.length;
   const deck = shuffle(buildDeck(numPlayers), rng);
 
+  const handSize = game.handSize ?? DEFAULT_HAND_SIZE;
+  if (deck.length < numPlayers * handSize + 2) {
+    throw new Error("Not enough cards for that many players and cards each");
+  }
   const hands = {};
   for (const id of ids) hands[id] = [];
-  for (let i = 0; i < HAND_SIZE; i++) {
+  for (let i = 0; i < handSize; i++) {
     for (const id of ids) {
       hands[id].push(deck.pop());
     }
   }
 
   const knowledge = emptyKnowledge(ids);
-  // Each player starts knowing their own bottom two cards (slots 2 and 3).
+  // Each player starts knowing their own last two cards (the bottom row).
   for (const id of ids) {
-    grantKnowledge({ knowledge }, id, id, 2);
-    grantKnowledge({ knowledge }, id, id, 3);
+    grantKnowledge({ knowledge }, id, id, handSize - 2);
+    grantKnowledge({ knowledge }, id, id, handSize - 1);
   }
 
   const startIndex = game.startPlayerCursor % numPlayers;
@@ -226,7 +239,7 @@ export function swapDrawnIntoHand(game, playerId, slotIndex) {
   if (r.drawnBy !== playerId || r.phase !== "awaitingDrawnCardDecision") {
     throw new Error("No drawn card to place");
   }
-  if (slotIndex < 0 || slotIndex >= HAND_SIZE) throw new Error("Bad slot");
+  if (slotIndex < 0 || slotIndex >= r.hands[playerId].length) throw new Error("Bad slot");
   const oldCard = r.hands[playerId][slotIndex];
   r.hands[playerId][slotIndex] = r.drawnCard;
   r.discardPile.push(oldCard);
@@ -410,6 +423,7 @@ export function redactForObserver(game, observerId) {
     discardTop: r.discardPile[r.discardPile.length - 1] || null,
     drawPileCount: r.drawPile.length,
     discardPileCount: r.discardPile.length,
+    handSize: game.handSize ?? DEFAULT_HAND_SIZE,
     cambioCallerId: r.cambioCallerId,
     pendingAbility: r.pendingAbility,
     drawnBy: r.drawnBy,

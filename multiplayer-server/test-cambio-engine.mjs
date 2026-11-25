@@ -419,6 +419,21 @@ check("bonus and penalty are separate settings, and totals can go negative", () 
   assert.equal(bad.results[bad.p0].penalized, true);
 });
 
+check("cards per player is a 4-8 setting; the last two cards are the opening peek", () => {
+  for (const n of [4, 6, 8]) {
+    const game = makeGame(3, { handSize: n });
+    const [p0] = game.round.order;
+    assert.equal(game.round.hands[p0].length, n);
+    const known = game.round.knowledge[p0][p0];
+    assert.deepEqual(known.map((k, i) => (k ? i : -1)).filter((i) => i >= 0), [n - 2, n - 1]);
+    assert.equal(redactForObserver(game, p0).round.handSize, n);
+  }
+  assert.throws(() => initGame([{ id: "a", name: "A" }, { id: "b", name: "B" }], { handSize: 3 }));
+  assert.throws(() => initGame([{ id: "a", name: "A" }, { id: "b", name: "B" }], { handSize: 9 }));
+  const ten = makeGame(10, { handSize: 8 }); // 80 cards dealt from a 108-card deck
+  assert.equal(ten.round.hands[ten.round.order[0]].length, 8);
+});
+
 console.log(`\n${passed} checks passed.`);
 if (process.exitCode) {
   console.log("SOME CHECKS FAILED");

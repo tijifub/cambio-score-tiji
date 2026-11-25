@@ -59,7 +59,7 @@ export function applyClientMessage(room, playerId, message, rng = Math.random) {
         if (room.players.length < 2) throw new Error("Need at least 2 players");
         room.game = initGame(
           room.players.map((p) => ({ id: p.id, name: p.name, total: 0 })),
-          { scoreLimit: message.scoreLimit, penaltyPoints: message.penaltyPoints, bonusPoints: message.bonusPoints }
+          { scoreLimit: message.scoreLimit, penaltyPoints: message.penaltyPoints, bonusPoints: message.bonusPoints, handSize: message.handSize }
         );
         startRound(room.game, rng);
         return { ok: true };

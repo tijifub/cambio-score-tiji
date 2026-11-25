@@ -159,6 +159,12 @@
     <div class="card" id="hostSettingsCard">
       <div class="grid2">
         <div>
+          <label>Cards per player</label>
+          <select id="lobbyHandSize">
+            <option>4</option><option>5</option><option>6</option><option>7</option><option>8</option>
+          </select>
+        </div>
+        <div>
           <label>Score limit</label>
           <input type="number" id="lobbyScoreLimit" value="100" min="10" step="5">
         </div>
@@ -289,6 +295,7 @@
   const waitingForHostCard = document.getElementById("waitingForHostCard");
   const lobbyScoreLimit = document.getElementById("lobbyScoreLimit");
   const lobbyPenalty = document.getElementById("lobbyPenalty");
+  const lobbyHandSize = document.getElementById("lobbyHandSize");
   const lobbyBonus = document.getElementById("lobbyBonus");
   const startGameBtn = document.getElementById("startGameBtn");
 
@@ -404,6 +411,7 @@
       scoreLimit: parseInt(lobbyScoreLimit.value, 10) || 100,
       penaltyPoints: num(lobbyPenalty, 5),
       bonusPoints: num(lobbyBonus, 5),
+      handSize: Math.min(8, Math.max(4, parseInt(lobbyHandSize.value, 10) || 4)),
     });
   });
 
